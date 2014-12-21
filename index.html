@@ -2,6 +2,9 @@
 <html>
 	<head>
 			<style>
+				#board {
+					line-height: 0;
+				}
 				.row {
 				  
 				}
@@ -34,7 +37,7 @@
 					var xKey = "x";
 					var yKey = "y";
 					var marked = "marked";
-					var livePiece = shapes.line;
+					var livePiece = shapes.forwardsZ;
 
 					init = function() {
 						bindKeyup();
@@ -109,10 +112,6 @@
 						moveOperator(x, y, right);
 					};
 
-					moveOperator = function(x, y, direction) {
-						return direction(x, y);
-					};
-
 					clone = function(piece){
 						var newPiece = [];
 						pieceOperator(piece, function(x, y){
@@ -128,12 +127,18 @@
 
 					moveLivePiece = function(direction){
 						var newLivePiece = [];
-						pieceOperator(livePiece, unMarkTile);
+						var isNewPieceValid = true;
+
 						pieceOperator(livePiece, function(x, y){
-							newLivePiece.push(direction(x,y));
+							var movedTile = direction(x,y);
+							isNewPieceValid = isNewPieceValid && movedTile;
+							newLivePiece.push(movedTile);
 						});
-						pieceOperator(newLivePiece, markTile);
-						livePiece = newLivePiece;
+						if (isNewPieceValid) {
+							pieceOperator(livePiece, unMarkTile);
+							pieceOperator(newLivePiece, markTile);
+							livePiece = newLivePiece;
+						};
 					};
 
 					buildGrid = function() {
