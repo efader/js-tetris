@@ -125,7 +125,26 @@
 						}
 					};
 
-					moveLivePiece = function(direction){
+					rotateLivePiece = function(direction){
+						var newLivePiece = [];
+						var isNewPieceValid = true;
+
+						var centerX = livePiece[1].x;
+						var centerY = livePiece[1].y;
+
+						pieceOperator(livePiece, function(x, y){
+							diffX = centerX - x;
+							diffY = centerY - y;
+							newLivePiece.push(tileCoordinates(centerX + diffY, centerY - diffX));
+						});
+						if (isNewPieceValid) {
+							pieceOperator(livePiece, unMarkTile);
+							pieceOperator(newLivePiece, markTile);
+							livePiece = newLivePiece;
+						};
+					};
+
+					moveLivePiece = function(direction) {
 						var newLivePiece = [];
 						var isNewPieceValid = true;
 
@@ -161,7 +180,8 @@
 						        moveLivePiece(right);
 						    }
 						    if(e.which==38) {
-						        moveLivePiece(up);
+						        //moveLivePiece(up);
+						        rotateLivePiece();
 						    }
 						    if(e.which==37) {
 						    	moveLivePiece(left);
