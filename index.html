@@ -17,7 +17,7 @@
 					border: 1px solid black;
 				}
 
-				.marked {
+				.live {
 					background-color: black;
 				}
 
@@ -36,13 +36,13 @@
 					var grid = {};
 					var xKey = "x";
 					var yKey = "y";
-					var marked = "marked";
+					var live = "live";
 					var livePiece = shapes.forwardsZ;
 
 					init = function() {
 						bindKeyup();
 						buildGrid();
-						pieceOperator(livePiece, markTile);
+						pieceOperator(livePiece, markLiveTile);
 					};
 
 					isInBounds = function(x, y) {
@@ -77,6 +77,30 @@
 						};
 					};
 
+					clockwise = function(centerX, centerY){
+						return function(x, y){
+							var diffX = centerX - x;
+							var diffY = centerY - y;
+							var newX = centerX + diffY;
+							var newY = centerY - diffX;
+							if(isInBounds(newX, newY)) {
+								return tileCoordinates(newX, newY);
+							};
+						}
+					}
+					
+					cClockwise = function(centerX, centerY){
+						return function(x, y){
+							var diffX = centerX - x;
+							var diffY = centerY - y;
+							var newX = centerX - diffY;
+							var newY = centerY + diffX;
+							if(isInBounds(newX, newY)) {
+								return tileCoordinates(newX, newY);
+							};
+						}
+					}
+
 					tileCoordinates = function(x, y) {
 						return {
 							x: x,
@@ -88,28 +112,12 @@
 						return $("#" + tileName + "-" + x + "-" + y);
 					};
 
-					markTile = function(x, y) {
-						getTile(x, y).addClass(marked);
+					markLiveTile = function(x, y) {
+						getTile(x, y).addClass(live);
 					};
 
-					unMarkTile = function(x, y) {
-						getTile(x, y).removeClass(marked);
-					};
-
-					moveUp = function(x, y) {
-						moveOperator(x, y, up);
-					};
-
-					moveDown = function(x, y) {
-						moveOperator(x, y, down);
-					};
-
-					moveLeft = function(x, y) {
-						moveOperator(x, y, left);
-					};
-
-					moveRight = function(x, y) {
-						moveOperator(x, y, right);
+					markEmptyTile = function(x, y) {
+						getTile(x, y).removeClass(live);
 					};
 
 					clone = function(piece){
@@ -125,25 +133,6 @@
 						}
 					};
 
-					rotateLivePiece = function(direction){
-						var newLivePiece = [];
-						var isNewPieceValid = true;
-
-						var centerX = livePiece[1].x;
-						var centerY = livePiece[1].y;
-
-						pieceOperator(livePiece, function(x, y){
-							diffX = centerX - x;
-							diffY = centerY - y;
-							newLivePiece.push(tileCoordinates(centerX + diffY, centerY - diffX));
-						});
-						if (isNewPieceValid) {
-							pieceOperator(livePiece, unMarkTile);
-							pieceOperator(newLivePiece, markTile);
-							livePiece = newLivePiece;
-						};
-					};
-
 					moveLivePiece = function(direction) {
 						var newLivePiece = [];
 						var isNewPieceValid = true;
@@ -154,8 +143,8 @@
 							newLivePiece.push(movedTile);
 						});
 						if (isNewPieceValid) {
-							pieceOperator(livePiece, unMarkTile);
-							pieceOperator(newLivePiece, markTile);
+							pieceOperator(livePiece, markEmptyTile);
+							pieceOperator(newLivePiece, markLiveTile);
 							livePiece = newLivePiece;
 						};
 					};
@@ -181,7 +170,11 @@
 						    }
 						    if(e.which==38) {
 						        //moveLivePiece(up);
-						        rotateLivePiece();
+						        //rotateLivePiece();
+						//        moveLivePiece(function(x, y){
+						//        	return clockwise(x, y, livePiece[1].x, livePiece[1].y);
+						//        });
+								moveLivePiece(cClockwise(livePiece[1].x, livePiece[1].y));
 						    }
 						    if(e.which==37) {
 						    	moveLivePiece(left);
