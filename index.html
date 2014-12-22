@@ -18,6 +18,10 @@
 				}
 
 				.live {
+					background-color: blue;
+				}
+
+				.dead{
 					background-color: black;
 				}
 
@@ -37,45 +41,44 @@
 					var xKey = "x";
 					var yKey = "y";
 					var live = "live";
-					var livePiece = shapes.forwardsZ;
-
-					init = function() {
-						bindKeyup();
-						buildGrid();
-						pieceOperator(livePiece, markLiveTile);
-					};
+					var dead = "dead";
+					var livePiece;
 
 					isInBounds = function(x, y) {
 						return (x > 0 && x <= xSize && y > 0 && y <= ySize);
-					};
+					}
+
+					isValidMove = function(x, y) {
+						return isInBounds(x, y) && !isDead(x,y);
+					}
+
+					isLive = function(x,y){
+						return getTile(x, y).hasClass(live);
+					}
+
+					isDead = function(x,y){
+						return getTile(x, y).hasClass(dead);
+					}
+
+					isEmpty = function(x, y){
+						return !getTile(x, y).hasClass(live) && !getTile(x, y).hasClass(dead);
+					}
 
 					left = function(x, y) {
-						var newX = x - 1;
-						if(isInBounds(newX, y)) {
-							return tileCoordinates(newX, y);
-						};
-					};
+						return tileCoordinates(x - 1, y);
+					}
 
 					right = function(x, y) {
-						var newX = x + 1;
-						if(isInBounds(newX, y)) {
-							return tileCoordinates(newX, y);
-						};
-					};
+						return tileCoordinates(x + 1, y);
+					}
 
 					up = function(x, y) {
-						var newY = y - 1;
-						if(isInBounds(x, newY)) {
-							return tileCoordinates(x, newY);
-						};
-					};
+						return tileCoordinates(x, y - 1);
+					}
 
 					down = function(x, y) {
-						var newY = y + 1;
-						if(isInBounds(x, newY)) {
-							return tileCoordinates(x, newY);
-						};
-					};
+						return tileCoordinates(x, y + 1);
+					}
 
 					clockwise = function(centerX, centerY){
 						return function(x, y){
@@ -83,9 +86,7 @@
 							var diffY = centerY - y;
 							var newX = centerX + diffY;
 							var newY = centerY - diffX;
-							if(isInBounds(newX, newY)) {
-								return tileCoordinates(newX, newY);
-							};
+							return tileCoordinates(newX, newY);
 						}
 					}
 					
@@ -95,59 +96,97 @@
 							var diffY = centerY - y;
 							var newX = centerX - diffY;
 							var newY = centerY + diffX;
-							if(isInBounds(newX, newY)) {
-								return tileCoordinates(newX, newY);
-							};
+							return tileCoordinates(newX, newY);
 						}
 					}
 
 					tileCoordinates = function(x, y) {
-						return {
-							x: x,
-							y: y
+						if (isValidMove(x,y)) {
+							return {
+								x: x,
+								y: y
+							}
 						}
 					}
 
 					getTile = function(x, y) {
 						return $("#" + tileName + "-" + x + "-" + y);
-					};
+					}
 
 					markLiveTile = function(x, y) {
-						getTile(x, y).addClass(live);
-					};
+						var tile = getTile(x, y);
+						if (!tile.hasClass(live)) {
+							tile.addClass(live);
+						}
+						if (tile.hasClass(dead)) {
+							tile.removeClass(dead);
+						}
+					}
 
 					markEmptyTile = function(x, y) {
-						getTile(x, y).removeClass(live);
-					};
+						var tile = getTile(x, y);
+						if (tile.hasClass(live)) {
+							tile.removeClass(live);
+						}
+						if (tile.hasClass(dead)) {
+							tile.removeClass(dead);
+						}
+					}
+
+					markDeadTile = function(x, y) {
+						var tile = getTile(x, y);
+						if (tile.hasClass(live)) {
+							tile.removeClass(live);
+						}
+						if (!tile.hasClass(dead)) {
+							tile.addClass(dead);;
+						}
+					}
 
 					clone = function(piece){
 						var newPiece = [];
 						pieceOperator(piece, function(x, y){
 							newPiece.push({x: x, y: y});
 						});
-					};
+						return newPiece;
+					}
+
+					getRandomPiece = function(){
+						var newPiece = [];
+						var piece = shapes[Math.floor(Math.random() * 5)];
+						pieceOperator(piece, function(x, y){
+							newPiece.push({x: x + Math.floor(xSize / 2 - 1), y: y});
+						});
+						return newPiece;
+					}
 
 					pieceOperator = function(piece, pieceFunction) {
 						for(var i = 0; i < 4; i++) {
 							pieceFunction(piece[i].x, piece[i].y);
 						}
-					};
+					}
 
 					moveLivePiece = function(direction) {
-						var newLivePiece = [];
-						var isNewPieceValid = true;
+						var movedPiece = [];
+						var isMoveValid = true;
 
 						pieceOperator(livePiece, function(x, y){
 							var movedTile = direction(x,y);
-							isNewPieceValid = isNewPieceValid && movedTile;
-							newLivePiece.push(movedTile);
+							isMoveValid = isMoveValid && movedTile;
+							movedPiece.push(movedTile);
 						});
-						if (isNewPieceValid) {
+						if (isMoveValid) {
 							pieceOperator(livePiece, markEmptyTile);
-							pieceOperator(newLivePiece, markLiveTile);
-							livePiece = newLivePiece;
-						};
-					};
+							pieceOperator(movedPiece, markLiveTile);
+							livePiece = movedPiece;
+						} else if (direction == down) {
+							movedPiece = getRandomPiece();
+							pieceOperator(livePiece, markDeadTile);
+							pieceOperator(movedPiece, markLiveTile);
+							livePiece = movedPiece;
+						}
+						
+					}
 
 					buildGrid = function() {
 						for (var i = 1; i <= ySize; i++) {
@@ -156,12 +195,18 @@
 							for (var j = 1; j <= xSize; j++) {
 								var tile = $("<span>", {id: tileName + "-" + j + "-" + i , class: tileName});
 								row.append(tile);
-							};
-						};
-					};
+							}
+						}
+					}
 
-					bindKeyup = function() {
-					    $(document).bind('keyup', function(e){
+					bindTimer = function(millis){
+						setInterval(function(){
+							moveLivePiece(down);
+						},millis);
+					}
+
+					bindKeydown = function() {
+					    $(document).bind('keydown', function(e){
 					      	if(e.which==40) {
 						        moveLivePiece(down);
 						    }
@@ -169,68 +214,63 @@
 						        moveLivePiece(right);
 						    }
 						    if(e.which==38) {
-						        //moveLivePiece(up);
-						        //rotateLivePiece();
-						//        moveLivePiece(function(x, y){
-						//        	return clockwise(x, y, livePiece[1].x, livePiece[1].y);
-						//        });
-								moveLivePiece(cClockwise(livePiece[1].x, livePiece[1].y));
+								moveLivePiece(clockwise(livePiece[1].x, livePiece[1].y));
 						    }
 						    if(e.which==37) {
 						    	moveLivePiece(left);
 						    }
 					    });
-					};
+					}
 
-				//$("body").on("focus",":input", function(){ $(document).unbind('keyup'); });
-				//$("body").on("blur",":input", function(){ bindKeyup(); });
+					init = function() {
+						buildGrid();
+						livePiece = getRandomPiece();
+						bindKeydown();
+						bindTimer(250);
+						pieceOperator(livePiece, markLiveTile);
+					}
 
 					init();
 				}
 
-				var shapes = {
-					square : [
+				var shapes = [
+					[
 						{x:1, y:1},
 						{x:1, y:2},
 						{x:2, y:1},
 						{x:2, y:2}
 					],
-
-					forwardsL : [
+					[
 						{x:1, y:1},
 						{x:1, y:2},
 						{x:1, y:3},
 						{x:2, y:3}
 					],
-
-					backwardsL : [
+					[
 						{x:2, y:1},
 						{x:2, y:2},
 						{x:2, y:3},
 						{x:1, y:3}
 					],
-
-					forwardsZ : [
+					[
 						{x:1, y:1},
 						{x:1, y:2},
 						{x:2, y:2},
 						{x:2, y:3}
 					],
-
-					backwardsZ : [
+					[
 						{x:2, y:1},
 						{x:2, y:2},
 						{x:1, y:2},
 						{x:1, y:3}
 					],
-
-					line : [
+					[
 						{x:1, y:1},
 						{x:1, y:2},
 						{x:1, y:3},
 						{x:1, y:4}
 					]
-				};
+				];
 
 			</script>
 		</head>
