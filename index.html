@@ -101,7 +101,7 @@
 					}
 
 					tileCoordinates = function(x, y) {
-						if (isValidMove(x,y)) {
+						if (isInBounds(x,y)) {
 							return {
 								x: x,
 								y: y
@@ -153,7 +153,7 @@
 
 					getRandomPiece = function(){
 						var newPiece = [];
-						var piece = shapes[Math.floor(Math.random() * 5)];
+						var piece = shapes[Math.floor(Math.random() * 6)];
 						pieceOperator(piece, function(x, y){
 							newPiece.push({x: x + Math.floor(xSize / 2 - 1), y: y});
 						});
@@ -168,20 +168,23 @@
 
 					moveLivePiece = function(direction) {
 						var movedPiece = [];
-						var isMoveValid = true;
+						var allowMove = true;
 
 						pieceOperator(livePiece, function(x, y){
 							var movedTile = direction(x,y);
-							isMoveValid = isMoveValid && movedTile;
+							allowMove = allowMove && movedTile && isValidMove(movedTile.x, movedTile.y);
 							movedPiece.push(movedTile);
 						});
-						if (isMoveValid) {
+						if (allowMove) {
 							pieceOperator(livePiece, markEmptyTile);
 							pieceOperator(movedPiece, markLiveTile);
 							livePiece = movedPiece;
 						} else if (direction == down) {
 							movedPiece = getRandomPiece();
 							pieceOperator(livePiece, markDeadTile);
+
+							checkAllRows();
+
 							pieceOperator(movedPiece, markLiveTile);
 							livePiece = movedPiece;
 						}
@@ -197,6 +200,39 @@
 								row.append(tile);
 							}
 						}
+					}
+
+					countFilledRows = function(rowNum, status){
+						return $("#"+rowName+"-"+rowNum.toString()+" ."+status).size()
+					}
+
+					clearRow = function(rowNum){
+						$("#"+rowName+"-"+rowNum.toString()+" ."+tileName).removeClass(dead);
+					}
+
+					shiftRowDown = function(rowNum){
+						for (var i = 1; i <= xSize; i++) {
+							 if(isDead(i, rowNum)){
+							 	markDeadTile(i, rowNum + 1);
+							 	markEmptyTile(i, rowNum);
+							 }
+						};
+					}
+
+					checkAllRows = function(){
+						var numCleared = 0;
+						for (var i = ySize; i > 0; i--) {
+							var deadTileCount = countFilledRows(i, dead);
+							if(deadTileCount == xSize){
+								clearRow(i);
+								numCleared++;
+							} else if(deadTileCount == 0) {
+								break;
+							}
+							for (var j = 0; j < numCleared; j++) {
+								shiftRowDown(i + j);
+							};
+						};
 					}
 
 					bindTimer = function(millis){
