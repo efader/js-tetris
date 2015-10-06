@@ -153,7 +153,7 @@
 
 					getRandomPiece = function(){
 						var newPiece = [];
-						var piece = shapes[Math.floor(Math.random() * 6)];
+						var piece = shapes[Math.floor(Math.random() * 7)];
 						pieceOperator(piece, function(x, y){
 							newPiece.push({x: x + Math.floor(xSize / 2 - 1), y: y});
 						});
@@ -305,6 +305,12 @@
 						{x:1, y:2},
 						{x:1, y:3},
 						{x:1, y:4}
+					],
+					[
+						{x:1, y:1},
+						{x:1, y:2},
+						{x:1, y:3},
+						{x:2, y:2}
 					]
 				];
 
